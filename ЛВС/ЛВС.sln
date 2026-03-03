@@ -5,7 +5,9 @@ VisualStudioVersion = 17.14.36616.10 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WinForms", "WinForms\WinForms.csproj", "{6A71F3B2-5463-46E2-8A7B-D2728D80C5CD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger", "MyLibrary\Messenger.csproj", "{CB980068-2A20-4443-8F58-4D34A18F0CAC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger.Shared", "MyLibrary\Messenger.Shared.csproj", "{CB980068-2A20-4443-8F58-4D34A18F0CAC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Messenger.Server", "Messenger.Server\Messenger.Server.csproj", "{98A5B505-0343-4763-AB25-5C5E729EB222}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{CB980068-2A20-4443-8F58-4D34A18F0CAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CB980068-2A20-4443-8F58-4D34A18F0CAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CB980068-2A20-4443-8F58-4D34A18F0CAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98A5B505-0343-4763-AB25-5C5E729EB222}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98A5B505-0343-4763-AB25-5C5E729EB222}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98A5B505-0343-4763-AB25-5C5E729EB222}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98A5B505-0343-4763-AB25-5C5E729EB222}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

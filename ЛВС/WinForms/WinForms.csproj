@@ -148,9 +148,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MyLibrary\Messenger.csproj">
+    <ProjectReference Include="..\Messenger.Server\Messenger.Server.csproj">
+      <Project>{98a5b505-0343-4763-ab25-5c5e729eb222}</Project>
+      <Name>Messenger.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\MyLibrary\Messenger.Shared.csproj">
       <Project>{cb980068-2a20-4443-8f58-4d34a18f0cac}</Project>
-      <Name>Messenger</Name>
+      <Name>Messenger.Shared</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

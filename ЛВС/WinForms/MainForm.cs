@@ -810,6 +810,8 @@ namespace WinForms
 
         private void BtnNewChat_Click(object sender, EventArgs e)
         {
+            if (currentUser == null) { MessageBox.Show("Сначала войдите в систему"); return; }
+
             using (var newChatForm = new NewChatForm(currentUser.DepartmentId))
             {
                 if (newChatForm.ShowDialog() == DialogResult.OK)
