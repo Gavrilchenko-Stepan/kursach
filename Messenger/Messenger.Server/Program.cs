@@ -10,6 +10,14 @@ namespace Messenger.Server
     {
         static void Main(string[] args)
         {
+            Console.Title = "Messenger Server - Завод 'МАРС'";
+            var server = new MessengerServer();
+            server.Start();
+
+            Console.WriteLine("\nНажмите 'q' для остановки сервера...");
+            while (Console.ReadKey().Key != ConsoleKey.Q) { }
+
+            server.Stop();
         }
     }
 }
