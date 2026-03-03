@@ -169,13 +169,14 @@ namespace Messenger.Server
                         {
                             chats.Add(new Chat
                             {
-                                Id = reader.GetInt32("id"),
-                                Name = reader.GetString("other_dept_name"),
-                                Type = ChatType.External,
-                                OtherDepartmentId = reader.GetInt32("other_dept_id"),
-                                LastMessage = reader.IsDBNull(4) ? null : reader.GetString(4),
-                                LastMessageTime = reader.IsDBNull(5) ? DateTime.MinValue : reader.GetDateTime(5),
-                                UnreadCount = reader.GetInt32(6)
+                                Id = reader.GetInt32("department_id"),
+                                Name = $"🔒 {reader.GetString("dept_name")}",
+                                Type = ChatType.Internal,
+                                DepartmentId = reader.GetInt32("department_id"),
+                                LastMessage = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                LastMessageTime = reader.IsDBNull(4) ? DateTime.MinValue : reader.GetDateTime(4),
+                                UnreadCount = reader.GetInt32(5),
+                                Participants = GetDepartmentUsers(reader.GetInt32("department_id")) // Добавить
                             });
                         }
                     }
@@ -183,6 +184,21 @@ namespace Messenger.Server
             }
 
             return chats;
+        }
+
+        private List<User> GetDepartmentUsers(int departmentId)
+        {
+            var users = new List<User>();
+            using (var conn = new MySqlConnection(connectionString))
+            {
+                conn.Open();
+                string query = @"
+            SELECT u.*, d.name as dept_name 
+            FROM users u
+            JOIN departments d ON u.department_id = d.id
+            WHERE u.department_id = @deptId AND u.is_active = 1";
+            }
+            return users;
         }
 
         private int GetUserDepartment(int userId)

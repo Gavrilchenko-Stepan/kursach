@@ -19,14 +19,63 @@ namespace WinForms
         public LoginForm()
         {
             InitializeComponent();
+            LoadLogo();
+            SubscribeEvents();
 
+            AcceptButton = btnLogin;
+            CancelButton = btnCancel;
+        }
+
+        private void SubscribeEvents()
+        {
             btnLogin.Click += BtnLogin_Click;
             txtUsername.TextChanged += TxtUsername_TextChanged;
             txtPassword.TextChanged += TxtPassword_TextChanged;
             txtServerIP.TextChanged += TxtServerIP_TextChanged;
+        }
 
-            AcceptButton = btnLogin;
-            CancelButton = btnCancel;
+        private void LoadLogo()
+        {
+            try
+            {
+                string[] possiblePaths = {
+                    "logo.png",
+                    "Resources\\logo.png",
+                    "..\\..\\Resources\\logo.png"
+                };
+
+                foreach (string path in possiblePaths)
+                {
+                    if (System.IO.File.Exists(path))
+                    {
+                        picLogo.Image = Image.FromFile(path);
+                        return;
+                    }
+                }
+                CreateDefaultLogo();
+            }
+            catch
+            {
+                CreateDefaultLogo();
+            }
+        }
+
+        private void CreateDefaultLogo()
+        {
+            Bitmap bmp = new Bitmap(80, 80);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.FromArgb(0, 51, 102));
+                using (Font font = new Font("Segoe UI", 30, FontStyle.Bold))
+                using (Brush brush = new SolidBrush(Color.White))
+                {
+                    StringFormat sf = new StringFormat();
+                    sf.Alignment = StringAlignment.Center;
+                    sf.LineAlignment = StringAlignment.Center;
+                    g.DrawString("М", font, brush, new Rectangle(0, 0, 80, 80), sf);
+                }
+            }
+            picLogo.Image = bmp;
         }
 
         private void TxtUsername_TextChanged(object sender, EventArgs e)
@@ -59,66 +108,20 @@ namespace WinForms
 
             ServerIP = txtServerIP.Text;
 
-            if (txtUsername.Text == "admin" && txtPassword.Text == "password")
+            // Здесь будет реальная аутентификация через сервер
+            // Временная заглушка для демонстрации
+            AuthenticatedUser = new User
             {
-                AuthenticatedUser = new User
-                {
-                    Id = 1,
-                    Username = "admin",
-                    FullName = "Соколов Андрей",
-                    DepartmentId = 1,
-                    DepartmentName = "IT",
-                    Position = "Начальник IT отдела"
-                };
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            else if (txtUsername.Text == "ivanov" && txtPassword.Text == "password")
-            {
-                AuthenticatedUser = new User
-                {
-                    Id = 2,
-                    Username = "ivanov",
-                    FullName = "Иванов Иван",
-                    DepartmentId = 2,
-                    DepartmentName = "Production",
-                    Position = "Начальник производства"
-                };
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            else if (txtUsername.Text == "petrov" && txtPassword.Text == "password")
-            {
-                AuthenticatedUser = new User
-                {
-                    Id = 3,
-                    Username = "petrov",
-                    FullName = "Петров Петр",
-                    DepartmentId = 2,
-                    DepartmentName = "Production",
-                    Position = "Мастер цеха"
-                };
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            else if (txtUsername.Text == "volkov" && txtPassword.Text == "password")
-            {
-                AuthenticatedUser = new User
-                {
-                    Id = 4,
-                    Username = "volkov",
-                    FullName = "Волков Владимир",
-                    DepartmentId = 3,
-                    DepartmentName = "Supply",
-                    Position = "Начальник снабжения"
-                };
-                DialogResult = DialogResult.OK;
-                Close();
-            }
-            else
-            {
-                lblError.Text = "Неверный логин или пароль";
-            }
+                Id = 1,
+                Username = txtUsername.Text,
+                FullName = "Пользователь",
+                DepartmentId = 1,
+                DepartmentName = "Отдел",
+                Position = "Должность"
+            };
+
+            DialogResult = DialogResult.OK;
+            Close();
         }
     }
 }

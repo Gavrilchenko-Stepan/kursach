@@ -29,6 +29,7 @@ namespace WinForms
         private System.Windows.Forms.Timer refreshTimer;
         private NotifyIcon notifyIcon;
         private ContextMenuStrip trayMenu;
+        private Dictionary<string, Image> avatarCache = new Dictionary<string, Image>();
 
         public MainForm()
         {
@@ -39,40 +40,29 @@ namespace WinForms
 
         private void CustomizeUI()
         {
+            // Настройка списка чатов
             lstChats.DrawMode = DrawMode.OwnerDrawFixed;
             lstChats.DrawItem += LstChats_DrawItem;
             lstChats.ItemHeight = 70;
 
+            // Настройка списка сообщений
             lstMessages.DrawMode = DrawMode.OwnerDrawFixed;
             lstMessages.DrawItem += LstMessages_DrawItem;
             lstMessages.ItemHeight = 70;
 
-            picUserAvatar.SizeMode = PictureBoxSizeMode.StretchImage;
-            picUserAvatar.Paint += (s, e) => {
-                var g = e.Graphics;
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                var path = new GraphicsPath();
-                path.AddEllipse(0, 0, picUserAvatar.Width - 1, picUserAvatar.Height - 1);
-                picUserAvatar.Region = new Region(path);
-            };
+            // Настройка аватаров
+            SetupAvatarPictureBox(picUserAvatar);
+            SetupAvatarPictureBox(picChatAvatar);
 
-            picChatAvatar.SizeMode = PictureBoxSizeMode.StretchImage;
-            picChatAvatar.Paint += (s, e) => {
-                var g = e.Graphics;
-                g.SmoothingMode = SmoothingMode.AntiAlias;
-                var path = new GraphicsPath();
-                path.AddEllipse(0, 0, picChatAvatar.Width - 1, picChatAvatar.Height - 1);
-                picChatAvatar.Region = new Region(path);
-            };
-
+            // Подписка на события
             this.Load += MainForm_Load;
             this.FormClosing += MainForm_FormClosing;
+            this.Resize += MainForm_Resize;
 
             txtSearch.Enter += TxtSearch_Enter;
             txtSearch.Leave += TxtSearch_Leave;
             txtSearch.TextChanged += TxtSearch_TextChanged;
-
-            txtMessage.KeyPress += TxtMessage_KeyPress;
+            txtMessage.KeyDown += TxtMessage_KeyDown;
 
             lstChats.SelectedIndexChanged += LstChats_SelectedIndexChanged;
 
@@ -82,14 +72,100 @@ namespace WinForms
             btnSettings.Click += BtnSettings_Click;
         }
 
+        private void SetupAvatarPictureBox(PictureBox pb)
+        {
+            pb.SizeMode = PictureBoxSizeMode.StretchImage;
+            pb.Paint += (s, e) => {
+                var g = e.Graphics;
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                var path = new GraphicsPath();
+                path.AddEllipse(0, 0, pb.Width - 1, pb.Height - 1);
+                pb.Region = new Region(path);
+            };
+        }
+
+        private Image CreateInitialsAvatar(string fullName, Color backColor)
+        {
+            Bitmap bmp = new Bitmap(50, 50);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.Clear(backColor);
+                using (Font font = new Font("Segoe UI", 20, FontStyle.Bold))
+                using (Brush brush = new SolidBrush(Color.White))
+                {
+                    StringFormat sf = new StringFormat();
+                    sf.Alignment = StringAlignment.Center;
+                    sf.LineAlignment = StringAlignment.Center;
+
+                    string initials = "?";
+                    if (!string.IsNullOrEmpty(fullName))
+                    {
+                        var parts = fullName.Split(' ');
+                        if (parts.Length >= 2)
+                            initials = parts[0][0].ToString() + parts[1][0].ToString();
+                        else if (parts.Length == 1 && parts[0].Length > 0)
+                            initials = parts[0][0].ToString();
+                    }
+
+                    g.DrawString(initials.ToUpper(), font, brush, new Rectangle(0, 0, 50, 50), sf);
+                }
+            }
+            return bmp;
+        }
+
+        private Image LoadAvatar(string key, string fullName, Color backColor)
+        {
+            if (avatarCache.ContainsKey(key))
+                return avatarCache[key];
+
+            string[] possiblePaths = {
+                $"Avatars/{key}.png",
+                $"Resources/Avatars/{key}.png",
+                $"Avatars/default.png"
+            };
+
+            foreach (string path in possiblePaths)
+            {
+                if (System.IO.File.Exists(path))
+                {
+                    try
+                    {
+                        var img = Image.FromFile(path);
+                        avatarCache[key] = img;
+                        return img;
+                    }
+                    catch { }
+                }
+            }
+
+            var avatar = CreateInitialsAvatar(fullName, backColor);
+            avatarCache[key] = avatar;
+            return avatar;
+        }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             UpdateUIForDisconnected();
         }
 
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            // Адаптация размеров при изменении окна
+            lstMessages.Width = panelRight.Width - 20;
+            lstMessages.Height = panelRight.Height - 160;
+            panelBottom.Width = panelRight.Width - 20;
+            panelBottom.Location = new Point(10, panelRight.Height - 90);
+            txtMessage.Width = panelBottom.Width - 140;
+            btnSend.Location = new Point(panelBottom.Width - 120, 10);
+        }
+
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             Disconnect();
+
+            foreach (var img in avatarCache.Values)
+                img?.Dispose();
+            avatarCache.Clear();
         }
 
         private void ShowLoginForm()
@@ -103,38 +179,17 @@ namespace WinForms
 
                     lblUserName.Text = currentUser.FullName;
                     lblUserDepartment.Text = currentUser.DepartmentName;
-                    picUserAvatar.Image = CreateDefaultAvatar(currentUser.FullName);
+                    picUserAvatar.Image = LoadAvatar(
+                        $"user_{currentUser.Id}",
+                        currentUser.FullName,
+                        Color.FromArgb(65, 105, 225)
+                    );
                 }
                 else
                 {
                     Application.Exit();
                 }
             }
-        }
-
-        private Image CreateDefaultAvatar(string fullName)
-        {
-            Bitmap bmp = new Bitmap(50, 50);
-            using (Graphics g = Graphics.FromImage(bmp))
-            {
-                g.Clear(Color.FromArgb(65, 105, 225));
-                using (Font font = new Font("Segoe UI", 20, FontStyle.Bold))
-                using (Brush brush = new SolidBrush(Color.White))
-                {
-                    StringFormat sf = new StringFormat();
-                    sf.Alignment = StringAlignment.Center;
-                    sf.LineAlignment = StringAlignment.Center;
-
-                    string initial = "?";
-                    if (!string.IsNullOrEmpty(fullName))
-                    {
-                        initial = fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "?";
-                    }
-
-                    g.DrawString(initial, font, brush, new Rectangle(0, 0, 50, 50), sf);
-                }
-            }
-            return bmp;
         }
 
         private void ConnectToServer(string serverIP)
@@ -190,29 +245,25 @@ namespace WinForms
         {
             isConnected = false;
 
-            if (client != null && client.Connected)
+            if (client?.Connected == true)
             {
                 try
                 {
                     var packet = new NetworkPacket { Command = NetworkCommand.Logout };
                     formatter.Serialize(stream, packet);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Ошибка при выходе: {ex.Message}");
+                }
             }
 
             refreshTimer?.Stop();
-
-            if (receiveThread != null && receiveThread.IsAlive)
-            {
-                try { receiveThread.Abort(); } catch { }
-            }
-
+            receiveThread?.Abort();
             stream?.Close();
             client?.Close();
 
-            this.Invoke(new Action(() => {
-                UpdateUIForDisconnected();
-            }));
+            this.Invoke(new Action(UpdateUIForDisconnected));
         }
 
         private void UpdateUIForDisconnected()
@@ -247,9 +298,7 @@ namespace WinForms
             {
                 if (isConnected)
                 {
-                    // Логируем ошибку
                     System.Diagnostics.Debug.WriteLine($"Ошибка соединения: {ex.Message}");
-
                     this.Invoke(new Action(() =>
                     {
                         MessageBox.Show($"Потеряно соединение с сервером: {ex.Message}", "Ошибка",
@@ -268,23 +317,18 @@ namespace WinForms
                 case NetworkCommand.Login:
                     HandleLogin(packet);
                     break;
-
                 case NetworkCommand.GetChats:
                     HandleGetChats(packet);
                     break;
-
                 case NetworkCommand.GetChatMessages:
                     HandleGetChatMessages(packet);
                     break;
-
                 case NetworkCommand.NewMessage:
                     HandleNewMessage(packet);
                     break;
-
                 case NetworkCommand.UserStatusChanged:
                     HandleUserStatusChanged(packet);
                     break;
-
                 case NetworkCommand.CreateExternalChat:
                     HandleCreateExternalChat(packet);
                     break;
@@ -300,10 +344,7 @@ namespace WinForms
 
             if (success)
             {
-                this.Invoke(new Action(() =>
-                {
-                    RequestChats();
-                }));
+                this.Invoke(new Action(RequestChats));
             }
             else
             {
@@ -333,9 +374,7 @@ namespace WinForms
         private void RefreshChats()
         {
             if (isConnected)
-            {
                 RequestChats();
-            }
         }
 
         private void HandleGetChats(NetworkPacket packet)
@@ -358,9 +397,7 @@ namespace WinForms
                               .ThenByDescending(c => c.LastMessageTime);
 
             foreach (var chat in sorted)
-            {
                 lstChats.Items.Add(chat);
-            }
         }
 
         private void HandleGetChatMessages(NetworkPacket packet)
@@ -371,16 +408,10 @@ namespace WinForms
             this.Invoke(new Action(() =>
             {
                 messagesCache[currentChat.Id] = messages;
+                DisplayMessages(currentChat.Id);
 
-                if (currentChat != null)
-                {
-                    DisplayMessages(currentChat.Id);
-
-                    if (messages.Count > 0)
-                    {
-                        MarkMessagesAsRead(currentChat.Id, messages.Last().Id);
-                    }
-                }
+                if (messages.Count > 0)
+                    MarkMessagesAsRead(currentChat.Id, messages.Last().Id);
             }));
         }
 
@@ -402,15 +433,13 @@ namespace WinForms
                     chat.LastMessage = message.Text;
                     chat.LastMessageTime = message.SentAt;
 
-                    if (currentChat == null || currentChat.Id != message.ChatId)
-                    {
+                    if (currentChat?.Id != message.ChatId)
                         chat.UnreadCount++;
-                    }
 
                     UpdateChatsList();
                 }
 
-                if (currentChat != null && currentChat.Id == message.ChatId)
+                if (currentChat?.Id == message.ChatId)
                 {
                     DisplayMessages(message.ChatId);
                     MarkMessagesAsRead(message.ChatId, message.Id);
@@ -436,12 +465,10 @@ namespace WinForms
                 {
                     var participant = chat.Participants?.FirstOrDefault(p => p.Id == user.Id);
                     if (participant != null)
-                    {
                         participant.IsOnline = user.IsOnline;
-                    }
                 }
 
-                if (currentChat != null && currentChat.Type == ChatType.Internal)
+                if (currentChat?.Type == ChatType.Internal)
                 {
                     int onlineCount = currentChat.Participants?.Count(p => p.IsOnline) ?? 0;
                     int totalCount = currentChat.Participants?.Count ?? 0;
@@ -470,35 +497,39 @@ namespace WinForms
 
         private void LstChats_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (lstChats.SelectedItem is Chat selectedChat)
+            if (!(lstChats.SelectedItem is Chat selectedChat)) return;
+
+            currentChat = selectedChat;
+            lblChatName.Text = selectedChat.Name;
+
+            if (selectedChat.Type == ChatType.Internal)
             {
-                currentChat = selectedChat;
+                picChatAvatar.BackColor = Color.FromArgb(0, 150, 136);
+                picChatAvatar.Image = LoadAvatar(
+                    $"dept_{selectedChat.DepartmentId}",
+                    selectedChat.Name.Replace("🔒 ", ""),
+                    Color.FromArgb(0, 150, 136)
+                );
 
-                lblChatName.Text = selectedChat.Name;
-
-                if (selectedChat.Type == ChatType.Internal)
-                {
-                    picChatAvatar.BackColor = Color.FromArgb(0, 150, 136);
-                    picChatAvatar.Image = CreateDefaultAvatar(selectedChat.Name.Replace("🔒 ", ""));
-
-                    int onlineCount = selectedChat.Participants?.Count(p => p.IsOnline) ?? 0;
-                    int totalCount = selectedChat.Participants?.Count ?? 0;
-                    lblChatInfo.Text = $"{onlineCount} онлайн • {totalCount} сотрудников";
-                }
-                else
-                {
-                    picChatAvatar.BackColor = Color.FromArgb(0, 123, 255);
-                    picChatAvatar.Image = CreateDefaultAvatar(selectedChat.Name);
-                    lblChatInfo.Text = $"Чат с отделом {selectedChat.Name}";
-                }
-
-                btnSend.Enabled = true;
-
-                selectedChat.UnreadCount = 0;
-                UpdateChatsList();
-
-                LoadChatMessages(selectedChat.Id);
+                int onlineCount = selectedChat.Participants?.Count(p => p.IsOnline) ?? 0;
+                int totalCount = selectedChat.Participants?.Count ?? 0;
+                lblChatInfo.Text = $"{onlineCount} онлайн • {totalCount} сотрудников";
             }
+            else
+            {
+                picChatAvatar.BackColor = Color.FromArgb(0, 123, 255);
+                picChatAvatar.Image = LoadAvatar(
+                    $"dept_{selectedChat.OtherDepartmentId}",
+                    selectedChat.Name,
+                    Color.FromArgb(0, 123, 255)
+                );
+                lblChatInfo.Text = $"Чат с отделом {selectedChat.Name}";
+            }
+
+            btnSend.Enabled = true;
+            selectedChat.UnreadCount = 0;
+            UpdateChatsList();
+            LoadChatMessages(selectedChat.Id);
         }
 
         private void LoadChatMessages(int chatId)
@@ -525,14 +556,10 @@ namespace WinForms
 
             lstMessages.Items.Clear();
             foreach (var msg in messagesCache[chatId])
-            {
                 lstMessages.Items.Add(msg);
-            }
 
             if (lstMessages.Items.Count > 0)
-            {
                 lstMessages.TopIndex = lstMessages.Items.Count - 1;
-            }
         }
 
         private void MarkMessagesAsRead(int chatId, int lastMessageId)
@@ -554,7 +581,10 @@ namespace WinForms
             {
                 formatter.Serialize(stream, packet);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Ошибка отметки прочитанных: {ex.Message}");
+            }
         }
 
         private void ShowNotification(Messenger.Shared.Models.Message message)
@@ -588,30 +618,23 @@ namespace WinForms
 
         private void LstChats_DrawItem(object sender, DrawItemEventArgs e)
         {
-            if (e.Index < 0 || lstChats.Items[e.Index] == null) return;
+            if (e.Index < 0 || !(lstChats.Items[e.Index] is Chat chat)) return;
 
-            var chat = lstChats.Items[e.Index] as Chat;
             e.DrawBackground();
 
             bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
             Color backColor = selected ? Color.FromArgb(230, 242, 255) : Color.White;
 
             using (var backBrush = new SolidBrush(backColor))
-            {
                 e.Graphics.FillRectangle(backBrush, e.Bounds);
-            }
 
             string icon = chat.Type == ChatType.Internal ? "🔒" : "📢";
             using (var iconFont = new Font("Segoe UI", 14))
-            {
                 e.Graphics.DrawString(icon, iconFont, Brushes.Gray, e.Bounds.X + 10, e.Bounds.Y + 15);
-            }
 
             int x = e.Bounds.X + 45;
             using (var nameFont = new Font("Segoe UI", 11, FontStyle.Bold))
-            {
                 e.Graphics.DrawString(chat.Name, nameFont, Brushes.Black, x, e.Bounds.Y + 10);
-            }
 
             if (!string.IsNullOrEmpty(chat.LastMessage))
             {
@@ -620,9 +643,7 @@ namespace WinForms
                     : chat.LastMessage;
 
                 using (var msgFont = new Font("Segoe UI", 9))
-                {
                     e.Graphics.DrawString(lastMsg, msgFont, Brushes.Gray, x, e.Bounds.Y + 35);
-                }
             }
 
             if (chat.LastMessageTime > DateTime.MinValue)
@@ -650,9 +671,7 @@ namespace WinForms
                         badgeSize, 18);
 
                     using (var badgeBrush = new SolidBrush(Color.FromArgb(220, 53, 69)))
-                    {
                         e.Graphics.FillEllipse(badgeBrush, badgeRect);
-                    }
 
                     e.Graphics.DrawString(count, countFont, Brushes.White,
                         badgeRect.X + (badgeRect.Width - countSize.Width) / 2,
@@ -661,19 +680,15 @@ namespace WinForms
             }
 
             using (var pen = new Pen(Color.FromArgb(230, 230, 230)))
-            {
-                e.Graphics.DrawLine(pen, e.Bounds.X, e.Bounds.Bottom - 1,
-                    e.Bounds.Right, e.Bounds.Bottom - 1);
-            }
+                e.Graphics.DrawLine(pen, e.Bounds.X, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
 
             e.DrawFocusRectangle();
         }
 
         private void LstMessages_DrawItem(object sender, DrawItemEventArgs e)
         {
-            if (e.Index < 0 || lstMessages.Items[e.Index] == null) return;
+            if (e.Index < 0 || !(lstMessages.Items[e.Index] is Messenger.Shared.Models.Message message)) return;
 
-            var message = lstMessages.Items[e.Index] as Messenger.Shared.Models.Message;
             e.DrawBackground();
 
             bool isMyMessage = message.SenderId == currentUser.Id;
@@ -697,21 +712,13 @@ namespace WinForms
 
             string header = $"{message.SenderName} • {message.SenderPosition}";
             if (message.SenderDepartmentId != currentUser.DepartmentId)
-            {
-                header += $" [др. отдел]";
-            }
+                header += " [др. отдел]";
 
             using (var nameFont = new Font("Segoe UI", 9, FontStyle.Bold))
-            {
-                e.Graphics.DrawString(header, nameFont, Brushes.Black,
-                    x + 5, e.Bounds.Y + 5);
-            }
+                e.Graphics.DrawString(header, nameFont, Brushes.Black, x + 5, e.Bounds.Y + 5);
 
             using (var textFont = new Font("Segoe UI", 10))
-            {
-                e.Graphics.DrawString(message.Text, textFont, Brushes.Black,
-                    x + 5, e.Bounds.Y + 25);
-            }
+                e.Graphics.DrawString(message.Text, textFont, Brushes.Black, x + 5, e.Bounds.Y + 25);
 
             string time = message.SentAt.ToString("HH:mm");
             using (var timeFont = new Font("Segoe UI", 8))
@@ -752,21 +759,17 @@ namespace WinForms
             }
 
             var filtered = chats.Where(c => c.Name.ToLower().Contains(search)).ToList();
-
             lstChats.Items.Clear();
             foreach (var chat in filtered)
-            {
                 lstChats.Items.Add(chat);
-            }
         }
 
-        private void TxtMessage_KeyPress(object sender, KeyPressEventArgs e)
+        private void TxtMessage_KeyDown(object sender, KeyEventArgs e)
         {
-            // Проверяем, что нажат Enter и при этом не нажат Ctrl
-            if (e.KeyChar == (char)Keys.Enter && (Control.ModifierKeys & Keys.Control) != Keys.Control)
+            if (e.KeyCode == Keys.Enter && !e.Control)
             {
                 SendMessage();
-                e.Handled = true;
+                e.SuppressKeyPress = true;
             }
         }
 

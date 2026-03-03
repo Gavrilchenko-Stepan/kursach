@@ -40,6 +40,12 @@
         {
             if (disposing && (components != null))
             {
+                // Освобождение ресурсов изображений
+                if (picUserAvatar.Image != null)
+                    picUserAvatar.Image.Dispose();
+                if (picChatAvatar.Image != null)
+                    picChatAvatar.Image.Dispose();
+
                 components.Dispose();
             }
             base.Dispose(disposing);
@@ -148,7 +154,7 @@
             this.btnNewChat.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnNewChat.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.btnNewChat.ForeColor = System.Drawing.Color.White;
-            this.btnNewChat.Location = new System.Drawing.Point(2150, 22);
+            this.btnNewChat.Location = new System.Drawing.Point(1045, 22);
             this.btnNewChat.Name = "btnNewChat";
             this.btnNewChat.Size = new System.Drawing.Size(140, 35);
             this.btnNewChat.TabIndex = 4;
@@ -164,7 +170,7 @@
             this.btnSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSettings.Font = new System.Drawing.Font("Segoe UI", 14F);
             this.btnSettings.ForeColor = System.Drawing.Color.White;
-            this.btnSettings.Location = new System.Drawing.Point(2300, 22);
+            this.btnSettings.Location = new System.Drawing.Point(1191, 22);
             this.btnSettings.Name = "btnSettings";
             this.btnSettings.Size = new System.Drawing.Size(45, 35);
             this.btnSettings.TabIndex = 5;
@@ -180,7 +186,7 @@
             this.btnLogout.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnLogout.Font = new System.Drawing.Font("Segoe UI", 14F);
             this.btnLogout.ForeColor = System.Drawing.Color.White;
-            this.btnLogout.Location = new System.Drawing.Point(2355, 22);
+            this.btnLogout.Location = new System.Drawing.Point(1245, 22);
             this.btnLogout.Name = "btnLogout";
             this.btnLogout.Size = new System.Drawing.Size(45, 35);
             this.btnLogout.TabIndex = 6;
@@ -240,7 +246,7 @@
             this.lstChats.ItemHeight = 17;
             this.lstChats.Location = new System.Drawing.Point(15, 80);
             this.lstChats.Name = "lstChats";
-            this.lstChats.Size = new System.Drawing.Size(320, 620);
+            this.lstChats.Size = new System.Drawing.Size(320, 600);
             this.lstChats.TabIndex = 3;
             // 
             // panelRight
@@ -302,7 +308,7 @@
             // flowOnlineStatus
             // 
             this.flowOnlineStatus.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.flowOnlineStatus.Location = new System.Drawing.Point(1428, 15);
+            this.flowOnlineStatus.Location = new System.Drawing.Point(700, 15);
             this.flowOnlineStatus.Name = "flowOnlineStatus";
             this.flowOnlineStatus.Size = new System.Drawing.Size(200, 40);
             this.flowOnlineStatus.TabIndex = 3;
@@ -317,9 +323,9 @@
             this.lstMessages.Font = new System.Drawing.Font("Segoe UI", 10F);
             this.lstMessages.IntegralHeight = false;
             this.lstMessages.ItemHeight = 17;
-            this.lstMessages.Location = new System.Drawing.Point(10, 80);
+            this.lstMessages.Location = new System.Drawing.Point(10, 90);
             this.lstMessages.Name = "lstMessages";
-            this.lstMessages.Size = new System.Drawing.Size(1660, 1135);
+            this.lstMessages.Size = new System.Drawing.Size(930, 530);
             this.lstMessages.TabIndex = 1;
             // 
             // panelBottom
@@ -330,9 +336,9 @@
             this.panelBottom.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panelBottom.Controls.Add(this.txtMessage);
             this.panelBottom.Controls.Add(this.btnSend);
-            this.panelBottom.Location = new System.Drawing.Point(10, 1225);
+            this.panelBottom.Location = new System.Drawing.Point(10, 630);
             this.panelBottom.Name = "panelBottom";
-            this.panelBottom.Size = new System.Drawing.Size(1660, 70);
+            this.panelBottom.Size = new System.Drawing.Size(930, 70);
             this.panelBottom.TabIndex = 2;
             // 
             // txtMessage
@@ -344,7 +350,7 @@
             this.txtMessage.Location = new System.Drawing.Point(10, 15);
             this.txtMessage.Multiline = true;
             this.txtMessage.Name = "txtMessage";
-            this.txtMessage.Size = new System.Drawing.Size(1520, 40);
+            this.txtMessage.Size = new System.Drawing.Size(790, 40);
             this.txtMessage.TabIndex = 0;
             // 
             // btnSend
@@ -357,7 +363,7 @@
             this.btnSend.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSend.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold);
             this.btnSend.ForeColor = System.Drawing.Color.White;
-            this.btnSend.Location = new System.Drawing.Point(1540, 10);
+            this.btnSend.Location = new System.Drawing.Point(810, 10);
             this.btnSend.Name = "btnSend";
             this.btnSend.Size = new System.Drawing.Size(110, 45);
             this.btnSend.TabIndex = 1;
